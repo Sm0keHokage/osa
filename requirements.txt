@@ -1,0 +1,4 @@
+redis==4.4.4
+tornado==6.0.3
+pytest==7.4.0
+flake8==6.1.0

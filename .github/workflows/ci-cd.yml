@@ -1,0 +1,84 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ "main", "master" ]
+  pull_request:
+    branches: [ "main", "master" ]
+  schedule:
+    - cron: '0 4 * * *'
+
+jobs:
+  check-quality:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+
+      - name: Install Deps
+        run: |
+          pip install -r requirements.txt
+
+      - name: Run Linter (Flake8)
+        run: flake8 app/
+
+      - name: Check for secrets
+        run: |
+          if grep -r "password =" app/; then
+            echo "Найдены потенциальные пароли!"
+            exit 1
+          fi
+          echo "Секретов в открытом виде не найдено."
+
+      - name: Run Unit Tests
+        run: pytest tests/
+  build:
+    needs: check-quality
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build App
+        run: |
+          mkdir dist
+          cp -r app/* dist/
+          cp requirements.txt dist/
+          echo "Build ${{ github.run_number }}" > dist/build_info.txt
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-dist
+          path: dist/
+
+  deploy-matrix:
+    needs: build
+    strategy:
+      matrix:
+        stage: [ test, prod ]
+    uses: ./.github/workflows/deploy-job.yml
+    with:
+      env_name: ${{ matrix.stage }}
+
+  notify:
+    needs: deploy-matrix
+    runs-on: ubuntu-latest
+    if: always()
+    steps:
+      - name: Telegram Message
+        uses: appleboy/telegram-action@master
+        with:
+          to: ${{ secrets.TELEGRAM_TO }}
+          token: ${{ secrets.TELEGRAM_TOKEN }}
+          format: markdown
+          message: |
+            *GitHub Actions Report* 
+             
+            Repo: ${{ github.repository }}
+            Status: ${{ needs.deploy-matrix.result == 'success' && 'OK' || 'Fail' }}
+              
+            [Открыть логи](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})
