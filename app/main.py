@@ -10,7 +10,7 @@ from tornado.options import parse_command_line
 
 PORT = 8888
 r = redis.StrictRedis(host=os.environ.get("REDIS_HOST", "localhost"),
-    port=int(os.environ.get("REDIS_PORT", "6379")), db=0)
+                      port=int(os.environ.get("REDIS_PORT", "6379")), db=0)
 
 
 class MainHandler(tornado.web.RequestHandler):
@@ -51,7 +51,7 @@ class HospitalHandler(tornado.web.RequestHandler):
         try:
             ID = r.get("hospital:autoID").decode()
 
-            a  = r.hset("hospital:" + ID, "name", name)
+            a = r.hset("hospital:" + ID, "name", name)
             a += r.hset("hospital:" + ID, "address", address)
             a += r.hset("hospital:" + ID, "phone", phone)
             a += r.hset("hospital:" + ID, "beds_number", beds_number)
@@ -109,7 +109,7 @@ class DoctorHandler(tornado.web.RequestHandler):
                     self.write("No hospital with such ID")
                     return
 
-            a  = r.hset("doctor:" + ID, "surname", surname)
+            a = r.hset("doctor:" + ID, "surname", surname)
             a += r.hset("doctor:" + ID, "profession", profession)
             a += r.hset("doctor:" + ID, "hospital_ID", hospital_ID)
 
@@ -164,7 +164,7 @@ class PatientHandler(tornado.web.RequestHandler):
         try:
             ID = r.get("patient:autoID").decode()
 
-            a  = r.hset("patient:" + ID, "surname", surname)
+            a = r.hset("patient:" + ID, "surname", surname)
             a += r.hset("patient:" + ID, "born_date", born_date)
             a += r.hset("patient:" + ID, "sex", sex)
             a += r.hset("patient:" + ID, "mpn", mpn)
@@ -220,7 +220,7 @@ class DiagnosisHandler(tornado.web.RequestHandler):
                 self.write("No patient with such ID")
                 return
 
-            a  = r.hset("diagnosis:" + ID, "patient_ID", patient_ID)
+            a = r.hset("diagnosis:" + ID, "patient_ID", patient_ID)
             a += r.hset("diagnosis:" + ID, "type", diagnosis_type)
             a += r.hset("diagnosis:" + ID, "information", information)
 
